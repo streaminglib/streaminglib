@@ -39,7 +39,8 @@ CMSketch<T>::CMSketch(double eps = default_eps,
 }
 
 template <typename T>
-CMSketch<T>::~CMSketch() {
+CMSketch<T>::~CMSketch()
+{
     for(int i = 0; i < depth; i++)
     {
         if (table_ptr[i] != NULL)
@@ -86,8 +87,52 @@ int CMSketch::point_query(T &item) const
     return ans;
 }
 
-Sketch::~Sketch() {
+Sketch::~Sketch()
+{
     std::cout << "Pure virtual ~Sketch()" << endl;
+}
+
+Hash::Hash(int w, int d, int **buffer = NULL)
+{
+    use_external_buffer = (bool)buffer;
+
+    if (!use_external_buffer)
+    {
+        params = new int *[2];
+        for (int i = 0; i < 2; i++)
+            params[i] = new int[d];
+    } else params = buffer;
+
+    for (int i = 0, ptr = 0; i < prime_num && ptr < d; ++i)
+    {
+        for (int j = i+1; j < prime_num && ptr < d; ++j)
+        {
+            params[0][ptr] = prime_numbers[i];
+            params[1][ptr] = prime_numbers[j];
+            ++ptr;
+        }
+    }
+}
+
+Hash::~Hash()
+{
+    if (!use_external_buffer)
+    {
+        for (int i = 0; i < 2; i++)
+            delete[](params[i]);
+        delete(params);
+    }
+}
+
+void Hash::hash(int key, int *values) const
+{
+    key = key * max_prime;
+    for (int i = 0, k = 0, b = 0; i < d; ++i)
+    {
+        k = params[0][i];
+        b = params[1][i];
+        values[i] = (k * key + b) % max_prime;
+    }
 }
 
 
