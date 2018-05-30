@@ -1,0 +1,122 @@
+//
+// Created by jin on 2018/5/8.
+//
+
+#include <vector>
+#include <string>
+#include <cmath>
+#include <algorithm>
+#include "hashtable.h"
+#include "hash.h"
+#include "sketch.h"
+
+CMSketch::
+CMSketch(size_t rows, size_t cell_width, size_t cells, Hash &hash)
+        : hashtable(cell_width, cells, rows) {
+    this->rows = rows;
+    this->cells = cells;
+    this->cell_width = cell_width;
+}
+
+void CMSketch::
+insert_element(const string &elem, size_t delta) {
+    nvec indices = hash(elem);
+    hashtable.inc(indices, delta, -1);
+}
+
+size_t CMSketch::
+query_element(const string &elem) const {
+    nvec indices = hash(elem);
+    return hashtable.minimum(indices, -1);
+}
+
+size_t CMSketch::
+query_inner_product(const CMSketch &cms) const {
+    using Hashtable::inner_product;
+    size_t result = inner_product(hashtable, 0, cms.hashtable, 0);
+    for (size_t i = 1; i < rows; i++){
+        size_t inner_prod = inner_product(hashtable, i, cms.hashtable, i);
+        if (inner_prod < result)
+            result = inner_prod;
+    }
+    return result;
+}
+
+// TODO: range query
+
+FMSketch::FMSketch(size_t cells, Hash &hash)
+        : hashtable(1, cells, 1) {
+    this->hash = hash;
+    this->cells = cells;
+}
+
+void FMSketch::insert_element(const string &elem) {
+    size_t index = tail(hash(elem)[0]);
+    hashtable.set(index);
+}
+
+size_t FMSketch::tail(size_t hashval) const {
+    size_t len = sizeof(size_t);
+    for (size_t i = 0; i < len; i++)
+        if (hashval & (1 << 0)) return i;
+    return len;
+}
+
+size_t FMSketch::
+query_num_distinct() const {
+    auto row = hashtable.get_row(0);
+    for (size_t i = 0; i < cells; i++) {
+        if (row[i][0]) continue;
+        else return size_t((float(1 << i)) / PHI);
+    }
+}
+
+CountSketch::
+CountSketch(size_t cell_width, size_t cells, size_t rows,
+            const Hash &hash1, const Hash &hash2)
+        : hashtable(cell_width, cells, rows) {
+    this->hash1 = hash1;
+    this->hash2 = hash2;
+    this->cell_width = cell_width;
+    this->cells = cells;
+    this->rows = rows;
+}
+
+void CountSketch::
+insert_element(const string &elem, size_t delta) {
+    auto indices = hash1(elem);
+    auto inc_dec = hash2(elem);
+    for (size_t i = 0; i < rows; i++) {
+        if (inc_dec[i] == 1)
+            hashtable.inc(indices[i], delta, i);
+        else
+            hashtable.dec(indices[i], delta, i);
+    }
+}
+
+size_t CountSketch::
+query_element(const string &elem) const {
+    auto indices = hash1(elem);
+    auto inc_dec = hash2(elem);
+    nvec result;
+
+    for (size_t i = 0; i < rows; i++) {
+        size_t temp = hashtable.get(indices[i], i);
+        result.push_back(inc_dec[i] * temp);
+    }
+    return find_median(inc_dec);
+}
+
+size_t CountSketch::
+find_median(nvec &vec) const {
+    size_t mid = vec.size() / 2;
+    std::nth_element(vec.begin(), vec.begin()+mid, vec.end());
+}
+
+
+
+
+
+
+
+
