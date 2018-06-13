@@ -111,6 +111,16 @@ void Hashtable::inc(const nvec &indices, size_t delta, int row) {
             inc(i, delta, row);
 }
 
+void Hashtable::inc(const nvec &indices, const nvec &delta, int row) {
+    if (row < 0)
+        for (size_t i = 0; i < rows; i++)
+            inc(indices[i], delta[i], i);
+    else {
+        for (size_t i = 0; i < rows; i++)
+            inc(indices[i], delta[i], row);
+    }
+}
+
 void Hashtable::dec(size_t idx, size_t delta, int row) {
     delta = ~delta + 1;
     inc(idx, delta, row);

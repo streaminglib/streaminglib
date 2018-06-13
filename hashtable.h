@@ -28,6 +28,7 @@ public:
     // 给特定位置的 counter
     void inc(size_t idx, size_t delta, int row=0);
     void inc(const nvec &indices, size_t delta, int row=0);
+    void inc(const nvec &indices, const nvec &deltas, int row=0);
     void dec(size_t idx, size_t delta, int row=0);
     void dec(const nvec &indices, size_t delta, int row=0);
     // 取得特定行特定部分所有最小 counter 的索引
