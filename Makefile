@@ -18,7 +18,7 @@
 #----------------------------------------------------------------
 
 SRCS          =
-CXXSRCS       = bloom_filter.cpp ams_sketch.cpp skim_sketch.cpp sketch.cpp hash.cpp hashtable.cpp MurmurHash3.cpp
+CXXSRCS       = bloom_filter.cpp ams_sketch.cpp skim_sketch.cpp sketch.cpp cold_filter.cpp hash.cpp hashtable.cpp MurmurHash3.cpp CityHash.cpp
 OBJS          =
 INTERFACE     = bloom_filter.i
 WRAPFILE      = $(INTERFACE:.i=_wrap.cpp)

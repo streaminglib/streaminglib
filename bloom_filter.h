@@ -22,6 +22,9 @@ public:
     void insert_element(const string &elem);
     void delete_element(const string &elem);
     size_t query_element(const string &elem) const;
+    void insert_element(const vector<string> &elem);
+    void delete_element(const vector<string> &elem);
+    nvec query_element(const vector<string> &elem) const;
 private:
     Hashtable hashtable;
     Hash& hash;
@@ -35,6 +38,8 @@ public:
     SpectralBloomFilter_MI(size_t cell_width, size_t cells, Hash &hash);
     void insert_element(const string &elem);
     size_t query_element(const string &elem) const;
+    void insert_element(const vector<string> &elem);
+    nvec query_element(const vector<string> &elem) const;
 private:
     Hashtable hashtable;
     Hash& hash;
@@ -51,6 +56,8 @@ public:
                            Hash &l1_hash, Hash &l2_hash);
     void insert_element(const string &elem);
     size_t query_element(const string &elem) const;
+    void insert_element(const vector<string> &elem);
+    nvec query_element(const vector<string> &elem) const;
 private:
     // 双层的 BloomFilter
     SpectralBloomFilter_Base L1_SBF;

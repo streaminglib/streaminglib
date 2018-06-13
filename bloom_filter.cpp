@@ -35,6 +35,34 @@ delete_element(const string &elem) {
     hashtable.dec(indices, 1);
 }
 
+void SpectralBloomFilter_Base::
+insert_element(const vector<string> &elem) {
+    size_t n = elem.size();
+    for (size_t i = 0; i < n; i++)
+        insert_element(elem[i]);
+}
+
+void SpectralBloomFilter_Base::
+delete_element(const vector<string> &elem) {
+    size_t n = elem.size();
+    for (size_t i = 0; i < n; i++)
+        delete_element(elem[i]);
+}
+
+nvec SpectralBloomFilter_Base::
+query_element(const vector<string> &elem) const {
+    nvec results;
+    size_t n = elem.size();
+    size_t result;
+    
+    for (size_t i = 0; i < n; i++) {
+        result = query_element(elem[i]);
+        results.push_back(result);
+    }
+    
+    return results;
+}
+
 SpectralBloomFilter_MI::
 SpectralBloomFilter_MI(
         size_t cell_width, size_t cells, Hash &hash)
@@ -54,6 +82,27 @@ size_t SpectralBloomFilter_MI::
 query_element(const string &elem) const {
     nvec indices = hash(elem);
     return hashtable.minimum(indices);
+}
+
+void SpectralBloomFilter_MI::
+insert_element(const vector<string> &elem) {
+    size_t n = elem.size();
+    for (size_t i = 0; i < n; i++)
+        insert_element(elem[i]);
+}
+
+nvec SpectralBloomFilter_MI::
+query_element(const vector<string> &elem) const {
+    nvec results;
+    size_t n = elem.size();
+    size_t result;
+    
+    for (size_t i = 0; i < n; i++) {
+        result = query_element(elem[i]);
+        results.push_back(result);
+    }
+    
+    return results;
 }
 
 SpectralBloomFilter_RM::
@@ -95,3 +144,22 @@ query_element(const string &elem) const {
     else return l1_result;
 }
 
+void SpectralBloomFilter_RM::
+insert_element(const vector<string> &elem) {
+    size_t n = elem.size();
+        for (size_t i = 0; i < n; i++)
+            insert_element(elem[i]);
+}
+
+nvec SpectralBloomFilter_RM::
+query_element(const vector<string> &elem) const {
+    nvec results;
+    size_t n = elem.size();
+    size_t result;
+    
+    for (size_t i = 0; i < n; i++) {
+        result = query_element(elem[i]);
+        results.push_back(result);
+    }
+    return results;
+}

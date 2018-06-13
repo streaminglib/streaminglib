@@ -43,6 +43,27 @@ query_inner_product(const CMSketch &cms) const {
     return result;
 }
 
+void CMSketch::
+insert_element(const vector<string> &elem, nvec delta) {
+    size_t n = elem.size();
+    for (size_t i = 0; i < n; i++)
+        insert_element(elem[i], delta[i]);
+}
+
+nvec CMSketch::
+query_element(const vector<string> &elem) const {
+    nvec results;
+    size_t n = elem.size();
+    size_t result;
+
+    for (size_t i = 0; i < n; i++) {
+        result = query_element(elem[i]);
+        results.push_back(result);
+    }
+    
+    return results;
+}
+
 // TODO: range query
 
 FMSketch::FMSketch(size_t cells, Hash &hash)
@@ -70,6 +91,13 @@ query_num_distinct() const {
         else return size_t((float(1 << i)) / PHI);
     }
     return size_t((float(1 << (cells+1))) / PHI);
+}
+
+void FMSketch::
+insert_element(const vector<string> &elem) {
+    size_t n = elem.size();
+    for (size_t i = 0; i < n; i++)
+        insert_element(elem[i]);
 }
 
 CountSketch::
@@ -104,6 +132,27 @@ query_element(const string &elem) const {
         result.push_back(inc_dec[i] * temp);
     }
     return find_median(result);
+}
+
+void CountSketch::
+insert_element(const vector<string> &elem, nvec delta) {
+    size_t n = elem.size();
+    for (size_t i = 0; i < n; i++)
+        insert_element(elem[i], delta[i]);
+}
+
+nvec CountSketch::
+query_element(const vector<string> &elem) const {
+    nvec results;
+    size_t n = elem.size();
+    size_t result;
+    
+    for (size_t i = 0; i < n; i++) {
+        result = query_element(elem[i]);
+        results.push_back(result);
+    }
+    
+    return results;
 }
 
 size_t CountSketch::

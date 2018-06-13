@@ -9,6 +9,7 @@
 #include <string>
 #include "hashtable.h"
 #include "MurmurHash3.h"
+#include "CityHash.h"
 
 using std::string;
 
@@ -26,12 +27,22 @@ private:
     nvec seeds;
 };
 
-class BinaryHash: public Hash {
+class BinaryHash: public Hash 
+{
 public:
     BinaryHash(Hash &hash);
     nvec operator()(const string &s) const override;
 private:
     Hash &hash;
+};
+
+class CityHash: public Hash
+{
+public:
+    CityHash(nvec seeds);
+    nvec operator()(const string &s) const override;
+private:
+    nvec seeds;
 };
 
 #endif //STREAMINGLIB_HASH_H

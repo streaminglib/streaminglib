@@ -40,3 +40,22 @@ operator()(const string &s) const {
         results[i] &= 1;
     return results;
 }
+
+CityHash::
+CityHash(nvec seeds) {
+    this->seeds = seeds;
+}
+
+nvec CityHash::
+operator()(const string &s) const {
+    const char *key = s.c_str();
+    const int len = s.size();
+    char out[128 / 8];
+    nvec results;
+    
+    for (auto seed: seeds) {
+        uint64 out = CityHash64WithSeed(key, len, seed);
+        results.push_back(*((size_t *) &out));
+    }
+    return results;
+}

@@ -6,6 +6,7 @@
 #define STREAMINGLIB_HASHTABLE_H
 
 #include <vector>
+#include <omp.h>
 
 typedef std::vector<size_t> nvec;
 typedef std::vector<bool> bvec;
@@ -26,9 +27,9 @@ public:
     void reset(size_t idx, int row=0);
     void reset(const nvec &indices, int row=0);
     // 给特定位置的 counter
-    void inc(size_t idx, size_t delta, int row=0);
-    void inc(const nvec &indices, size_t delta, int row=0);
-    void inc(const nvec &indices, const nvec &deltas, int row=0);
+    void inc(size_t idx, int delta, int row=0);
+    void inc(const nvec &indices, int delta, int row=0);
+    void inc(const nvec &indices, const vector<int> &deltas, int row=0);
     void dec(size_t idx, size_t delta, int row=0);
     void dec(const nvec &indices, size_t delta, int row=0);
     // 取得特定行特定部分所有最小 counter 的索引
@@ -36,6 +37,8 @@ public:
     void idxmin(nvec &idxmin, const nvec &mask, int row=0) const;
     // 取得特定行特定部分最小 counter 的值
     size_t minimum(const nvec &mask, int row=0) const;
+    void max(const nvec &indices, size_t n, int row=0);
+    void assign(const nvec &indices, size_t n, int row=0);
 
 private:
     size_t cell_width;

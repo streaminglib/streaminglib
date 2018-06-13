@@ -12,8 +12,8 @@
 #include "hashtable.h"
 using namespace std;
 
-const int s1 = 64;
-const int s2 = 128;
+const size_t s1 = 64;
+const size_t s2 = 128;
 
 class skim_sketch{
 public:
@@ -32,35 +32,9 @@ private:
     int est_sub_join_size(std::vector<int> & e, Hashtable & h);
 };
 
-int hash_template(int seed, int n) {
-    uint64_t *res = (uint64_t* )malloc(sizeof(uint64_t) * 2);
-    MurmurHash3_x64_128(&n, 1, seed, res);
-
-    int ans = (*res) & (s2 - 1);
-    free(res);
-    return ans;
-}
-
-void get_hash_table(std::vector<int> & f, Hashtable & h){
-    for(int i = 0; i < f.size(); i += 1){
-        for(int j = 0; j < s1; j += 1){
-            h[j][hash_template(j, f[i])] += ((hash_template(f[i], j) & 1) << 1) - 1;
-        }
-    }
-}
-
-int inner_product(vector<int> &p, vector<int> &q, int length){
-    int res = 0;
-    for(int i = 0; i < length; i += 1){
-        res += p[i] * q[i];
-    }
-    return res;
-}
-
-int median(vector<int> p, int length){
-    vector<int> pv(p);
-    nth_element(pv.begin(), pv.begin() + pv.size() / 2, pv.end());
-    return pv[length / 2];
-}
+int hash_template(int seed, int n);
+void get_hash_table(std::vector<int> & f, Hashtable & h);
+int inner_product(vector<int> &p, vector<int> &q, int length);
+int median(vector<int> p, int length);
 
 #endif // STREAMINGLIB_SKIM_SKETCH_H

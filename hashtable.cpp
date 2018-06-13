@@ -87,11 +87,11 @@ void Hashtable::reset(const nvec &indices, int row) {
 }
 
 // 按位实现加法，需检测
-void Hashtable::inc(size_t idx, size_t delta, int row) {
+void Hashtable::inc(size_t idx, int delta, int row) {
     auto &target_cell = table[row][idx % cells];
     size_t cell_val = cell_to_sizet(target_cell);
-    size_t carry = cell_val & delta;
-    size_t result = cell_val ^ delta;
+    size_t carry = cell_val & (size_t)delta;
+    size_t result = cell_val ^ (size_t)delta;
     while (carry)
     {
         carry = result & (carry << 1);
@@ -102,7 +102,7 @@ void Hashtable::inc(size_t idx, size_t delta, int row) {
 }
 
 // 按位实现加法(矢量版），需检测
-void Hashtable::inc(const nvec &indices, size_t delta, int row) {
+void Hashtable::inc(const nvec &indices, int delta, int row) {
     if (row < 0)
         for (size_t i = 0; i < rows; i++)
             inc(indices[i], delta, i);
@@ -111,7 +111,7 @@ void Hashtable::inc(const nvec &indices, size_t delta, int row) {
             inc(i, delta, row);
 }
 
-void Hashtable::inc(const nvec &indices, const nvec &delta, int row) {
+void Hashtable::inc(const nvec &indices, const vector<int> &delta, int row) {
     if (row < 0)
         for (size_t i = 0; i < rows; i++)
             inc(indices[i], delta[i], i);
@@ -182,6 +182,38 @@ size_t Hashtable::minimum(const nvec &mask, int row) const {
     nvec idxmin;
     this->idxmin(idxmin, mask, row);
     return get(idxmin[0], row);
+}
+
+void Hashtable::
+max(const nvec &indices, size_t n, int row) {
+    if (row < 0) {
+        for (size_t i = 0; i < rows; i++) {
+            size_t val = cell_to_sizet(table[i][indices[i]]);
+            if (val < n)
+                sizet_to_cell(n, table[i][indices[i]]);
+        }
+    }
+    else {
+        auto target_row = table[row];
+        for (auto i: indices) {
+            size_t val = cell_to_sizet(target_row[i]);
+            if (val < n)
+                sizet_to_cell(n, target_row[i]);
+        }
+    }
+}
+
+void Hashtable::
+assign(const nvec &indices, size_t n, int row) {
+    if (row < 0) {
+        for (size_t i = 0; i < rows; i++)
+            sizet_to_cell(n, table[i][indices[i]]);
+    }
+    else {
+        auto target_row = table[row];
+        for (auto i: indices) 
+            sizet_to_cell(n, target_row[i]);
+    }
 }
 
 size_t Hashtable::cell_to_sizet(const bvec &cell) {

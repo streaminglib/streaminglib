@@ -1,4 +1,4 @@
-//
+ //
 // Created by jin on 2018/5/8.
 //
 
@@ -15,6 +15,8 @@ public:
     void insert_element(const string &elem, size_t delta=1);
     size_t query_element(const string &elem) const;
     size_t query_inner_product(const CMSketch &cms) const;
+    void insert_element(const vector<string> &elem, nvec delta);
+    nvec query_element(const vector<string> &elem) const;
 private:
     Hashtable hashtable;
     Hash &hash;
@@ -29,6 +31,7 @@ public:
     FMSketch(size_t cells, Hash &hash);
     void insert_element(const string &elem);
     size_t query_num_distinct() const;
+    void insert_element(const vector<string> &elem);
 private:
     static constexpr float PHI = 0.77351;
     Hashtable hashtable;
@@ -44,6 +47,8 @@ public:
                 Hash &hash1, Hash &hash2);
     void insert_element(const string &elem, size_t delta);
     size_t query_element(const string &elem) const;
+    void insert_element(const vector<string> &elem, nvec delta);
+    nvec query_element(const vector<string> &elem) const;
 private:
     Hashtable hashtable;
     Hash &hash1, &hash2;
