@@ -26,4 +26,12 @@ private:
     nvec seeds;
 };
 
+class BinaryHash: public Hash {
+public:
+    BinaryHash(Hash &hash);
+    nvec operator()(const string &s) const override;
+private:
+    Hash &hash;
+};
+
 #endif //STREAMINGLIB_HASH_H

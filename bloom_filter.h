@@ -24,7 +24,7 @@ public:
     size_t query_element(const string &elem) const;
 private:
     Hashtable hashtable;
-    Hash hash;
+    Hash& hash;
     size_t cells;
     size_t cell_width;
 };
@@ -37,7 +37,7 @@ public:
     size_t query_element(const string &elem) const;
 private:
     Hashtable hashtable;
-    Hash hash;
+    Hash& hash;
     size_t cells;
     size_t cell_width;
 };

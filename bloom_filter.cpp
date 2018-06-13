@@ -1,124 +1,97 @@
+//
+// Created by jin on 2018/5/7.
+//
+
+#include <iostream>
 #include <vector>
-#include <string>
-#include <algorithm>
-#include "MurmurHash3.h"
-using namespace std;
 
-typedef vector<vector<bool> > hash_table_t;
+#include "hashtable.h"
+#include "hash.h"
+#include "bloom_filter.h"
 
-
-class Hash_table
-{
-public:
-	Hash_table(int filters, int hashes, int seed);
-	int get_filters() const;
-	int get_hashes() const;
-private:
-	hash_table_t ht;
+SpectralBloomFilter_Base::
+SpectralBloomFilter_Base(
+        size_t cell_width, size_t cells, Hash &hash)
+        : hashtable(cell_width, cells), hash(hash) {
+    this->cell_width = cell_width;
+    this->cells = cells;
 }
 
-class Bloom_filter
-{
-public:
-	Bloom_filter(int filter_len, int hashes, int seed=131);
-	void insert_element(string elem);
-	bool query_element(string elem) const;
-	double get_occupancy() const;
-	int get_filter_len() const;
-	int get_hashes() const;
-	int get_seed() const;
-private:
-	int _get_hashval(string elem) const;
-	hash_table_t hash_table;
-	int filter_len;
-	int hashes;
-	int seed;
-};
-
-Bloom_filter::Bloom_filter(int filter_len, int hashes)
-{
-	hash_table.resize(hashes);
-	for(int i = 0; i < hashes; i++)
-		hash_table[i].resize(filter_len);
-	this->filter_len = filter_len;
-	this->hashes = hashes;
-	this->seed = seed;
+void SpectralBloomFilter_Base::
+insert_element(const string &elem) {
+    auto indices = hash(elem);
+    hashtable.inc(indices, 1);
 }
 
-void Bloom_filter::insert_element(string key)
-{
-	int len = key.size();
-	const void *data = key.c_str();
-	char out[16];
-	int hashval = 0;
-	for(int i = 0; i < hashes; i++)
-	{
-		MurmurHash_x64_128(data, len, seed+i, out);
-		hashval = *(int *)out;
-		hash_table[i][hashval%filter_len] = True;
-	}
+size_t SpectralBloomFilter_Base::
+query_element(const string &elem) const {
+    auto indices = hash(elem);
+    return hashtable.minimum(indices);
 }
 
-bool Bloom_filter::query_element(string key)
-{
-	int len = key.size();
-	const void *data = key.c_str();
-	char out[16];
-	int hashval = 0;
-	for(int i = 0; i < hashes; i++)
-	{
-		MurmurHash_x64_128(data, len, seed+i, out);
-		hashval = *(int *)out;
-		if(hash_table[i][hashval%filter_len] == false)
-			return false;
-	}
-	return true;
+void SpectralBloomFilter_Base::
+delete_element(const string &elem) {
+    auto indices = hash(elem);
+    hashtable.dec(indices, 1);
 }
 
-int Bloom_filter::get_filter_len() const
-{
-	return filter_len;
+SpectralBloomFilter_MI::
+SpectralBloomFilter_MI(
+        size_t cell_width, size_t cells, Hash &hash)
+        : hashtable(cell_width, cells), hash(hash) {
+    this->cell_width = cell_width;
+    this->cells = cells;
 }
 
-int Bloom_filter::get_hashes() const
-{
-	return hashes;
+void SpectralBloomFilter_MI::
+insert_element(const string &elem) {
+    nvec indices = hash(elem);
+    nvec idxmin;
+    hashtable.idxmin(idxmin, indices);    hashtable.inc(idxmin, 1);
 }
 
-int Bloom_filter::get_seed() const
-{
-	return seed;
+size_t SpectralBloomFilter_MI::
+query_element(const string &elem) const {
+    nvec indices = hash(elem);
+    return hashtable.minimum(indices);
 }
 
-void Bloom_filter::get_occupancy(double[] out) const
-{
-	for(int i = 0; i < hashes; i++)
-	{
-		out[i] = 0;
-		for(int j = 0; j < filter_len; j++)
-		{
-			if(hash_table[i][j])
-				out[i] ++;
-		}
-		out[i] /= filter_len;
-		
-	}
+SpectralBloomFilter_RM::
+SpectralBloomFilter_RM(
+        size_t l1_cell_width, size_t l2_cell_width,
+        size_t l1_cells, size_t l2_cells,
+        Hash &l1_hash, Hash &l2_hash)
+        : L1_SBF(l1_cell_width, l1_cells, l1_hash),
+          L2_SBF(l2_cell_width, l2_cells, l2_hash){}
+
+void SpectralBloomFilter_RM::
+insert_element(const string &elem) {
+    nvec l1_idxmin;
+    nvec l1_indices = L1_SBF.hash(elem);
+    L1_SBF.hashtable.inc(l1_indices, 1);
+    L1_SBF.hashtable.idxmin(l1_idxmin, l1_indices);
+    if (l1_idxmin.size() > 1) return;
+
+    nvec l2_idxmin;
+    nvec l2_indices = L2_SBF.hash(elem);
+    size_t l2_minimum = L2_SBF.hashtable.minimum(l2_indices);
+    if (l2_minimum > 0)
+        L2_SBF.hashtable.inc(l2_indices, 1);
+    else {
+        size_t delta = L1_SBF.hashtable.get(l1_idxmin[0]);
+        L2_SBF.hashtable.inc(l2_indices, delta);
+    }
 }
 
-
-int main()
-{
-	string filename = "./test_file";
-	int query_num = 32;
-	int filter_size = 128;
-	int hash_num = 5;
-	
-	bf = Bloom_filter(filter_size, hash_num);
-	bf.load_data_from_file(filename);
-	bool exist = bf.query(query_num);
-	cout << exist << endl;
-	
-	return 0;
+size_t SpectralBloomFilter_RM::
+query_element(const string &elem) const {
+    size_t l1_result = L1_SBF.query_element(elem);
+    nvec l1_idxmin;
+    L1_SBF.hashtable.idxmin(l1_idxmin, L1_SBF.hash(elem));
+    bool recur_minimum = l1_idxmin.size() > 1;
+    if (recur_minimum) return l1_result;
+    size_t l2_result = L2_SBF.query_element(elem);
+    if (l2_result > 0) return l2_result;
+    else return l1_result;
 }
-
 

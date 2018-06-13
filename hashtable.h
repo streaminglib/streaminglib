@@ -46,7 +46,7 @@ private:
     std::vector<std::vector<bvec>> table;
 
     // 辅助函数，将 counter 转换为 size_t 的值，int.frombytes
-    static size_t cell_to_sizet(const bvec &cell) const;
+    static size_t cell_to_sizet(const bvec &cell);
     // 辅助函数，将 size_t 的值存到 counter(cell) 中
     void sizet_to_cell(size_t val, bvec &cell);
     // 即字典序比较，与 comp(cell_to_sizet(a), cell_to_sizet(b)) 等价

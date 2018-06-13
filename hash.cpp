@@ -28,3 +28,15 @@ operator()(const string &s) const {
     }
     return results;
 }
+
+BinaryHash::
+BinaryHash(Hash &hash)
+    :hash(hash) {}
+    
+nvec BinaryHash::
+operator()(const string &s) const {
+    nvec results = this->hash(s);
+    for (size_t i = 0; i < results.size(); i++)
+        results[i] &= 1;
+    return results;
+}
