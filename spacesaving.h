@@ -2,13 +2,16 @@
 #define STREAMING_LIB_SPACEVING_H
 
 #include <vector>
+#include <iostream>
+#include <algorithm>
+#include "hash.h"
 
 struct node{
     int value;
     int freq;
     int over_est;
     node(){
-        value = 0;
+        value = -1;
         freq = -1;
         over_est = 0;
     }
@@ -23,6 +26,7 @@ struct node{
 };
 
 class space_saving{
+public:
     std::vector<node> heap; // should be an array
     int size;
     int used;
@@ -37,99 +41,59 @@ class space_saving{
         size = s;
         heap.resize(size);
     }
+    void insert(char* ele, int freq = 1){
+    	char hash_val[16] = {};
+        MurmurHash3_x64_128(ele, strlen(ele), 137, hash_val);
+        insert(*(int* )hash_val, freq);
+	}
     void insert(int val, int freq = 1){
         n += freq;
-        if(used < size){
-            heap[used] = heap(val, freq);
-            used += 1;
-            if(used == size){
-                make_heap();
-            }
-            return ;
-        }
-        for(int i = 0; i < size; i += 1){
+        for(int i = 0; i < used; i += 1){
             if(heap[i].value == val){
                 heap[i].freq += freq;
                 heapify(i);
                 return ;
             }
         }
+        if(used < size){
+            heap[used] = node(val, freq);
+            used += 1;
+            if(used == size){
+                make_heap();
+            }
+            return ;
+        }
         heap[0].value = val;
         heap[0].over_est = heap[0].freq;
         heap[0].freq += 1;
         heapify(0);
     }
-    int query_frequent(int m, double support_ratio){
-        double sr = support_ratio;
-        int guaranteed = 1;
-
-        int idx = 0;
-        for(int i = size - 1; i >= 0 && idx < m; i -= 1){
-            if(heap[i].freq > sr * n){
-                std::cout << heap[i].value << std::endl;
-                idx += 1;
-                if(heap[i].freq - heap[i].over_est < sr * n){
-                    guaranteed = 0;
-                }
-            }
-        }
-
-        return guaranteed;
+    void query_top(std::vector<node> & res){
+        res.assign(heap.begin(), heap.end());
     }
-    int query_top(int m, int k){
-        int order = 1;
-        int guaranteed = 0;
-        int min_guar_freq = INT_MAX;
-
-        for(int i = size - 1; i >= size - k; i -= 1){
-            std::cout << heap[i].value << std::endl;
-            if(heap[i].freq - heap[i].over_est < min_guar_freq){
-                min_guar_freq = heap[i].freq - heap[i].over_est;
-            }
-            if(heap[i].freq - heap[i].over_est < heap[i - 1].freq){
-                order = 0;
-            }
-        }
-
-        if(heap[size - k - 1].freq <= min_guar_freq){
-            guaranteed = 1;
-        }else{
-            std::cout << heap[size - k - 1].freq << std::endl;
-            for(int i = size - k - 2; i >= 0; i -= 1){
-                if(heap[i].freq - heap[i].over_est < min_guar_freq){
-                    min_guar_freq = heap[i].freq - heap[i].over_est;
-                }
-                if(heap[i - 1].freq < min_guar_freq){
-                    guaranteed = 1;
-                    break;
-                }
-                std::cout << heap[i].freq << std::endl;
-            }
-        }
-        return guaranteed || order;
-    }
+private:
     void heapify(int idx){
         int left_son = (idx << 1) + 1;
         int right_son = (idx << 1) + 2;
-        if(right_son < size){
-            int min_val = min(heap[idx].value, heap[left_son].value, heap[right_son].value);
-            if(min_val == heap[idx].value){
+        if(right_son < used){
+            int min_val = std::min(heap[idx].freq, std::min(heap[left_son].freq, heap[right_son].freq));
+            if(min_val == heap[idx].freq){
                 return ;
-            }else if(min_val == heap[left_son].value){
-                swap(heap[idx], heap[left_son]);
+            }else if(min_val == heap[left_son].freq){
+                std::swap(heap[idx], heap[left_son]);
                 heapify(left_son);
                 return ;
             }else{
-                swap(heap[idx], heap[right_son]);
+                std::swap(heap[idx], heap[right_son]);
                 heapify(right_son);
                 return ;
             }
-        }else if(left_son < size){
-            int min_val = min(heap[idx].value, heap[left_son].value);
+        }else if(left_son < used){
+            int min_val = std::min(heap[idx].freq, heap[left_son].freq);
             if(min_val == heap[idx].value){
                 return ;
             }else{
-                swap(heap[idx], heap[left_son]);
+                std::swap(heap[idx], heap[left_son]);
                 heapify(left_son);
                 return ;
             }
