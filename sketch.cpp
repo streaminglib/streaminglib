@@ -6,6 +6,7 @@
 #include <string>
 #include <cmath>
 #include <algorithm>
+#include <iostream>
 #include "hashtable.h"
 #include "hash.h"
 #include "sketch.h"

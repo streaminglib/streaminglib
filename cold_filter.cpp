@@ -24,6 +24,8 @@ insert_and_report(const string &elem) {
     nvec idxmin;
 
     nvec l1_indices = this->L1_hash(elem);
+    for (size_t i = 0; i < l1_indices.size(); i++)
+        l1_indices[i] %= l1_cells;
     size_t l1_min = this->L1_table.minimum(l1_indices);
     if (l1_min < this->l1_thres) {
         this->L1_table.idxmin(idxmin, l1_indices);
@@ -32,6 +34,8 @@ insert_and_report(const string &elem) {
     }
 
     nvec l2_indices = this->L2_hash(elem);
+    for (size_t i = 0; i < l1_indices.size(); i++)
+        l2_indices[i] %= l2_cells;
     size_t l2_min = this->L2_table.minimum(l2_indices);
     if (l2_min >= this->l2_thres) return true;
     this->L2_table.idxmin(idxmin, l2_indices);
@@ -44,6 +48,8 @@ insert_and_report(const string &elem, size_t num, size_t &repo_freq) {
     nvec idxmin;
 
     nvec l1_indices = this->L1_hash(elem);
+    for (size_t i = 0; i < l1_indices.size(); i++)
+        l1_indices[i] %= l1_cells;
     size_t l1_min = this->L1_table.minimum(l1_indices);
     if (l1_min+num <= this->l1_thres) {
         this->L1_table.max(l1_indices, l1_min+num);
@@ -54,6 +60,8 @@ insert_and_report(const string &elem, size_t num, size_t &repo_freq) {
     num = num - (this->l1_thres - l1_min);
 
     nvec l2_indices = this->L2_hash(elem);
+    for (size_t i = 0; i < l1_indices.size(); i++)
+        l2_indices[i] %= l2_cells;
     size_t l2_min = this->L2_table.minimum(l2_indices);
     if (l2_min + num <= this->l2_thres) {
         this->L2_table.max(l2_indices, l2_min+num);
@@ -102,6 +110,7 @@ ColdFilter_Aggregate(ColdFilter &filter, size_t buckets,
                      size_t bucket_cells, Hash &bucket_hash)
                      : filter(filter), bucket_hash(bucket_hash){
     this->buckets.resize(buckets);
+    this->bucket_cells = bucket_cells;
     for (auto b: this->buckets)
         b.resize(bucket_cells);
 }
@@ -110,7 +119,7 @@ bool ColdFilter_Aggregate::
 insert_and_report(const string &elem, size_t id, size_t &repo_freq) {
     size_t repo_id, bucket_repo_freq;
     bool overflow = false;
-    size_t bucket_idx = this->bucket_hash(elem)[0];
+    size_t bucket_idx = this->bucket_hash(elem)[0] % bucket_cells;
     overflow = this->buckets[bucket_idx].insert(id, repo_id, bucket_repo_freq);
     if (!overflow) {
         repo_freq = 0;

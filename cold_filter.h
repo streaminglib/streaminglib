@@ -1,3 +1,6 @@
+#ifndef STREAMINGLIB_COLD_FILTER_H
+#define STREAMINGLIB_COLD_FILTER_H
+
 #include "hash.h"
 #include "hashtable.h"
 
@@ -31,6 +34,7 @@ public:
     bool insert_and_report(const string &elem, size_t id, size_t &repo_freq);
     bvec insert_and_report(const vector<string> &elem, nvec id, nvec &repo_freq);
 private:
+    size_t bucket_cells;
     ColdFilter &filter;
     vector<Bucket> buckets;
     Hash &bucket_hash;
@@ -48,3 +52,5 @@ private:
     nvec id;
     nvec freq;
 };
+
+#endif //STREAMINGLIB_COLD_FILTER_H
