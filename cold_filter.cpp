@@ -47,6 +47,7 @@ insert_and_report(const string &elem, size_t num, size_t &repo_freq) {
     size_t l1_min = this->L1_table.minimum(l1_indices);
     if (l1_min+num <= this->l1_thres) {
         this->L1_table.max(l1_indices, l1_min+num);
+        repo_freq = 0;
         return false;
     }
     this->L1_table.assign(l1_indices, this->l1_thres);
@@ -56,10 +57,12 @@ insert_and_report(const string &elem, size_t num, size_t &repo_freq) {
     size_t l2_min = this->L2_table.minimum(l2_indices);
     if (l2_min + num <= this->l2_thres) {
         this->L2_table.max(l2_indices, l2_min+num);
+        repo_freq = 0;
         return false;
     }
     this->L2_table.assign(l2_indices, this->l2_thres);
     num = num - (this->l2_thres - l2_min);
+    repo_freq = num;
     return true;
 }
 
@@ -76,6 +79,7 @@ insert_and_report(const vector<string> &elem) {
     
     return results;
 }
+
 bvec ColdFilter::
 insert_and_report(const vector<string> &elem, nvec num, nvec &repo_freq) {
     bvec results;
@@ -108,10 +112,12 @@ insert_and_report(const string &elem, size_t id, size_t &repo_freq) {
     bool overflow = false;
     size_t bucket_idx = this->bucket_hash(elem)[0];
     overflow = this->buckets[bucket_idx].insert(id, repo_id, bucket_repo_freq);
-    if (!overflow) return false;
+    if (!overflow) {
+        repo_freq = 0;
+        return false;
+    }
     overflow = this->filter.insert_and_report(elem, bucket_repo_freq, repo_freq);
-    if (overflow) return true;
-    return false;
+    return overflow;
 }
 
 bvec ColdFilter_Aggregate::
@@ -131,14 +137,14 @@ insert_and_report(const vector<string> &elem, nvec id, nvec &repo_freq) {
     return results;
 }
 
-void ColdFilter_Aggregate::Bucket::
+void Bucket::
 resize(size_t cells) {
     this->cells = cells;
     this->id.resize(cells);
     this->freq.resize(cells);
 }
 
-bool ColdFilter_Aggregate::Bucket::
+bool Bucket::
 insert(size_t id, size_t &repo_id, size_t &repo_freq) {
     ssize_t vacancy = -1;
     for (size_t i = 0; i < this->cells; i++)

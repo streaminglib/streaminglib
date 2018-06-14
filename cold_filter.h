@@ -21,11 +21,11 @@ private:
     size_t l1_thres, l2_thres;
 };
 
+class Bucket;
 
 class ColdFilter_Aggregate
 {
 public:
-    class Bucket;
     ColdFilter_Aggregate(ColdFilter &filter, size_t buckets,
                          size_t bucket_cells, Hash &bucket_hash);
     bool insert_and_report(const string &elem, size_t id, size_t &repo_freq);
@@ -37,8 +37,9 @@ private:
 };
 
 
-class ColdFilter_Aggregate::Bucket
+class Bucket
 {
+friend ColdFilter_Aggregate;
 public:
     bool insert(size_t id, size_t &repo_id, size_t &repo_freq);
     void resize(size_t cells);

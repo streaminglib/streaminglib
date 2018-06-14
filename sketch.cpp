@@ -16,10 +16,28 @@ CMSketch(size_t rows, size_t cell_width, size_t cells, Hash &hash)
     this->rows = rows;
     this->cells = cells;
     this->cell_width = cell_width;
+    this->cf_ptr = nullptr;
+}
+
+
+CMSketch::
+CMSketch(size_t rows, size_t cell_width, size_t cells, Hash &hash, ColdFilter &cf)
+        : hashtable(cell_width, cells, rows), hash(hash) {
+    this->rows = rows;
+    this->cells = cells;
+    this->cell_width = cell_width;
+    this->cf_ptr = &cf;
 }
 
 void CMSketch::
 insert_element(const string &elem, size_t delta) {
+    if (this->cf_ptr != nullptr) {
+        ColdFilter &cf = *(this->cf_ptr);
+        size_t repo_freq = 0;
+        bool report = false;
+        report = cf.insert_and_report(elem, delta, repo_freq);
+        if (!report) return;
+    }
     nvec indices = hash(elem);
     hashtable.inc(indices, delta, -1);
 }

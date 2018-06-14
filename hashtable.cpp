@@ -111,7 +111,6 @@ void Hashtable::inc(size_t idx, int delta, int row) {
     size_t result = cell_val + delta;
     sizet_to_cell(result, target_cell);
     omp_unset_lock(&lock_table[row][idx % cells]);
-    std::cout << cell_val << " -> " << result << std::endl;
 }
 
 // 按位实现加法(矢量版），需检测

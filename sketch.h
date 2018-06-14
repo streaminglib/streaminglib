@@ -7,11 +7,13 @@
 
 #include "hash.h"
 #include "hashtable.h"
+#include "cold_filter.h"
 
 class CMSketch
 {
 public:
     CMSketch(size_t rows, size_t cell_width, size_t cells, Hash &hash);
+    CMSketch(size_t rows, size_t cell_width, size_t cells, Hash &hash, ColdFilter &cf);
     void insert_element(const string &elem, size_t delta=1);
     size_t query_element(const string &elem) const;
     size_t query_inner_product(CMSketch &cms);
@@ -20,6 +22,7 @@ public:
 private:
     Hashtable hashtable;
     Hash &hash;
+    ColdFilter *cf_ptr;
     size_t rows;
     size_t cells;
     size_t cell_width;
