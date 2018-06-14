@@ -1,6 +1,6 @@
 #include "ams_sketch.h"
 
-ams_sketch::ams_sketch(size_t c, size_t c_w, int* s): hash_table(32, c_w, c), seeds(s, s + c){
+ams_sketch::ams_sketch(size_t c, size_t c_w, vector<int> s): hash_table(32, c_w, c), seeds(&s[0], &s[c]){
     cells = c;
     cell_width = c_w;
 }
@@ -13,6 +13,13 @@ void ams_sketch::insert_element(const string &ele, int freq){
         MurmurHash3_x64_128(ele.c_str(), ele.size(), seeds[i], mult_fac);
         update_sketch(*(int* )mult_fac, i, *(int* )hash_val, freq);
     }
+}
+
+void ams_sketch::insert_element(const vector<string> &ele, vector<int> freq) {
+    size_t n = ele.size();
+#pragma omp parallel for
+    for (size_t i = 0; i < n; i++)
+        insert_element(ele[i], freq[i]);
 }
 
 int ams_sketch::update_sketch(int mult, int idx, int hash, int freq){
@@ -56,8 +63,20 @@ int ams_sketch::obj_count(const string & ele) {
         MurmurHash3_x64_128(ele.c_str(), ele.size(), seeds[i], mult_fac);
 		get_estimate(*(int* )hash_val, *(int* )mult_fac, i, estimates);
 	}
-	int ans =  get_final_estimates(estimates);
+	size_t ans = get_final_estimates(estimates);
 	return ans;
+}
+
+vector<int> ams_sketch::obj_count(const vector<string> &ele) {
+    vector<int> results;
+    size_t len = ele.size();
+    
+    results.resize(len);
+#pragma omp parallel for
+    for (size_t i = 0; i < len; i++) 
+        results[i] = obj_count(ele[i]);
+    
+    return results;
 }
 
 void ams_sketch::get_estimate(int hash, int mult, int idx, std::vector<int> & estimates) {

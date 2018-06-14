@@ -12,10 +12,12 @@ using namespace std;
 
 class ams_sketch{
 public:
-    ams_sketch(size_t c, size_t c_w, int* s);
+    ams_sketch(size_t c, size_t c_w, vector<int> s);
     void insert_element(const string & ele, int freq = 1);
+    void insert_element(const vector<string> &ele, vector<int> freq);
     int get_estimateF2();
     int obj_count(const string & ele);
+    vector<int> obj_count(const vector<string> &ele);
 private:
     Hashtable hash_table;
     std::vector<int> seeds;
