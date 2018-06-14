@@ -31,7 +31,7 @@ exec_prefix   = ${prefix}
 CC            = gcc
 CXX           = g++
 CFLAGS        =
-CXXFLAGS	  = -std=c++11
+CXXFLAGS	  = -std=c++11 -Xpreprocessor -fopenmp
 INCLUDES      =
 LIBS          =
 
@@ -41,7 +41,7 @@ LIBS          =
 #     SWIGCC    = Compiler used to compile the wrapper file
 
 SWIG          = $(exec_prefix)/bin/swig
-SWIGOPT       = -c++ -python
+SWIGOPT       = -threads -c++ -python
 SWIGCC        = $(CXX)
 
 # SWIG Library files.  Uncomment if rebuilding the Python interpreter
@@ -59,7 +59,7 @@ BUILD         = $(SWIGCC)
 
 # Uncomment the following if you are using dynamic loading
 CCSHARED      = -fpic
-BUILD         = g++ -lpython -dynamiclib
+BUILD         = g++ -Xpreprocessor -fopenmp -lomp -lpython -dynamiclib
 
 # Uncomment the following if you are using dynamic loading with C++ and
 # need to provide additional link libraries (this is not always required).

@@ -11,6 +11,8 @@ public:
                Hash &l1_hash, Hash &l2_hash);
     bool insert_and_report(const string &elem);
     bool insert_and_report(const string &elem, size_t num, size_t &repo_freq);
+    bvec insert_and_report(const vector<string> &elem);
+    bvec insert_and_report(const vector<string> &elem, nvec num, nvec &repo_freq);
 private:
     Hashtable L1_table, L2_table;
     Hash &L1_hash, &L2_hash;
@@ -27,6 +29,7 @@ public:
     ColdFilter_Aggregate(ColdFilter &filter, size_t buckets,
                          size_t bucket_cells, Hash &bucket_hash);
     bool insert_and_report(const string &elem, size_t id, size_t &repo_freq);
+    bvec insert_and_report(const vector<string> &elem, nvec id, nvec &repo_freq);
 private:
     ColdFilter &filter;
     vector<Bucket> buckets;

@@ -27,14 +27,32 @@ Hashtable::Hashtable(size_t cell_width, size_t cells, size_t rows) {
         for (size_t j = 0; j < cells; j++)
             table[i][j].resize(cell_width);
     }
+    
+    lock_table.resize(rows);
+    for (size_t i = 0; i < rows; i++) {
+        lock_table[i].resize(cells);
+        for (size_t j = 0; j < cells; j++)
+            omp_init_lock(&lock_table[i][j]);
+    }
+    
+//    omp_init_lock(&global_read_lock);
+//    omp_init_lock(&global_write_lock);
 }
 
-size_t Hashtable::inner_product(const Hashtable &a, size_t rowa, const Hashtable &b, size_t rowb) {
+size_t Hashtable::inner_product(Hashtable &a, size_t rowa, Hashtable &b, size_t rowb) {
     size_t sum = 0, len = a.table[rowa].size();
+    for (size_t i = 0; i < len; i++) {
+        omp_set_lock(&(a.lock_table[rowa][i]));
+        omp_set_lock(&(b.lock_table[rowb][i]));
+    }
     for (size_t i = 0; i < len; i++) {
         size_t aval = Hashtable::cell_to_sizet(a.table[rowa][i]);
         size_t bval = Hashtable::cell_to_sizet(b.table[rowb][i]);
         sum += aval * bval;
+    }
+    for (size_t i = 0; i < len; i++) {
+        omp_unset_lock(&a.lock_table[rowa][i]);
+        omp_unset_lock(&b.lock_table[rowb][i]);
     }
     return sum;
 }
@@ -61,12 +79,12 @@ void Hashtable::set(size_t idx, int row) {
 void Hashtable::set(const nvec &indices, int row) {
     if (row < 0) {
         for (size_t i = 0; i < rows; i++)
-            table[i][indices[i]][0] = true;
+            set(i, indices[i]);
         return;
     }
-    auto &target_row = table[row];
-    for (auto i: indices)
-        target_row[i][0] = true;
+    else
+        for (auto i: indices) set(row, i);
+        
     return;
 }
 
@@ -77,28 +95,23 @@ void Hashtable::reset(size_t idx, int row) {
 void Hashtable::reset(const nvec &indices, int row) {
     if (row < 0) {
         for (size_t i = 0; i < rows; i++)
-            table[i][indices[i]][0] = false;
+            reset(i, indices[i]);
         return;
     }
-    auto &target_row = table[row];
-    for (auto i: indices)
-        target_row[i][0] = false;
+    else
+        for (auto i: indices) reset(row, i);
     return;
 }
 
 // 按位实现加法，需检测
 void Hashtable::inc(size_t idx, int delta, int row) {
     auto &target_cell = table[row][idx % cells];
+    omp_set_lock(&lock_table[row][idx % cells]);
     size_t cell_val = cell_to_sizet(target_cell);
-    size_t carry = cell_val & (size_t)delta;
-    size_t result = cell_val ^ (size_t)delta;
-    while (carry)
-    {
-        carry = result & (carry << 1);
-        result ^= (carry << 1);
-    }
-    target_cell[cell_width-1] = 1;
+    size_t result = cell_val + delta;
     sizet_to_cell(result, target_cell);
+    omp_unset_lock(&lock_table[row][idx % cells]);
+    std::cout << cell_val << " -> " << result << std::endl;
 }
 
 // 按位实现加法(矢量版），需检测
@@ -144,61 +157,93 @@ void Hashtable::idxmin(nvec &idxmin, const nvec &mask, int row) const {
     if (row < 0) {
         size_t valmin = 0;
         if (!idxmin.empty()) idxmin.clear();
+
         for (size_t i = 0; i < rows; i++) {
             auto cell = table[i][scaled_mask[i]];
             if (bitwise_compare(cell, table[valmin][scaled_mask[valmin]]) > 0) continue;
             valmin = i;
         }
+
         for (size_t i = 0; i < rows; i++) {
             if (!bitwise_compare(table[i][scaled_mask[i]], table[valmin][scaled_mask[valmin]]))
                 idxmin.push_back(i);
         }
-        return;
-    }
-
-    auto &target_row = table[row];
-    size_t valmin = scaled_mask[0];
-
-    if (!idxmin.empty()) idxmin.clear();
-    
-    for (auto i: scaled_mask) {
-        auto cell = target_row[i];
-        if (bitwise_compare(cell, target_row[valmin]) > 0) continue;
-        valmin = i;
     }
     
-    for (auto i: scaled_mask) {
-        if (!bitwise_compare(target_row[i], target_row[valmin]))
-            idxmin.push_back(i);
+    else {
+        auto &target_row = table[row];
+        size_t valmin = scaled_mask[0];
+
+        if (!idxmin.empty()) idxmin.clear();
+            
+        for (auto i: scaled_mask) {
+            auto cell = target_row[i];
+            if (bitwise_compare(cell, target_row[valmin]) > 0) continue;
+            valmin = i;
+        }
+        
+        for (auto i: scaled_mask) {
+            if (!bitwise_compare(target_row[i], target_row[valmin]))
+                idxmin.push_back(i);
+        }
     }
 }
 
 size_t Hashtable::minimum(const nvec &mask, int row) const {
+    nvec scaled_mask = mask;
+    size_t result;
+    
+    for (size_t i = 0; i < scaled_mask.size(); i++)
+        scaled_mask[i] %= this->cells;
+        
     if (row < 0) {
-        nvec idxmin;
-        this->idxmin(idxmin, mask, -1);
-        return get(mask[idxmin[0]], idxmin[0]);
+        size_t valmin = 0;
+        
+        for (size_t i = 0; i < rows; i++) {
+            auto cell = table[i][scaled_mask[i]];
+            if (bitwise_compare(cell, table[valmin][scaled_mask[valmin]]) > 0) continue;
+            valmin = i;
+        }
+        
+        result = cell_to_sizet(table[valmin][scaled_mask[valmin]]);
     }
-    nvec idxmin;
-    this->idxmin(idxmin, mask, row);
-    return get(idxmin[0], row);
+
+    else {
+        auto &target_row = table[row];
+        size_t valmin = scaled_mask[0];
+    
+        for (auto i: scaled_mask) {
+            auto cell = target_row[i];
+            if (bitwise_compare(cell, target_row[valmin]) > 0) continue;
+            valmin = i;
+        }
+        
+        result = cell_to_sizet(target_row[valmin]);
+    }
+    return result;
 }
 
 void Hashtable::
 max(const nvec &indices, size_t n, int row) {
     if (row < 0) {
         for (size_t i = 0; i < rows; i++) {
+            omp_set_lock(&lock_table[i][indices[i]]);
             size_t val = cell_to_sizet(table[i][indices[i]]);
             if (val < n)
                 sizet_to_cell(n, table[i][indices[i]]);
+            omp_unset_lock(&lock_table[i][indices[i]]);
         }
     }
     else {
         auto target_row = table[row];
-        for (auto i: indices) {
-            size_t val = cell_to_sizet(target_row[i]);
+        size_t len = indices.size();
+
+        for (size_t i = 0; i < len; i++) {
+            omp_set_lock(&lock_table[row][indices[i]]);
+            size_t val = cell_to_sizet(target_row[indices[i]]);
             if (val < n)
-                sizet_to_cell(n, target_row[i]);
+                sizet_to_cell(n, target_row[indices[i]]);
+            omp_unset_lock(&lock_table[row][indices[i]]);
         }
     }
 }
@@ -206,15 +251,29 @@ max(const nvec &indices, size_t n, int row) {
 void Hashtable::
 assign(const nvec &indices, size_t n, int row) {
     if (row < 0) {
-        for (size_t i = 0; i < rows; i++)
+        for (size_t i = 0; i < rows; i++) {
+            omp_set_lock(&lock_table[i][indices[i]]);
             sizet_to_cell(n, table[i][indices[i]]);
+            omp_unset_lock(&lock_table[i][indices[i]]);
+        }
     }
     else {
         auto target_row = table[row];
-        for (auto i: indices) 
-            sizet_to_cell(n, target_row[i]);
+        size_t len = indices.size();
+        
+        for (size_t i = 0; i < len; i++) {
+            omp_set_lock(&lock_table[row][indices[i]]);
+            sizet_to_cell(n, target_row[indices[i]]);
+            omp_unset_lock(&lock_table[row][indices[i]]);
+        }
     }
+
 }
+
+//void Hashtable::set_global_read_lock() { omp_set_lock(&global_read_lock); }
+//void Hashtable::set_global_write_lock() { omp_set_lock(&global_write_lock); }
+//void Hashtable::unset_global_read_lock() { omp_unset_lock(&global_read_lock); }
+//void Hashtable::unset_global_write_lock() { omp_unset_lock(&global_write_lock); }
 
 size_t Hashtable::cell_to_sizet(const bvec &cell) {
     size_t i = (size_t)std::accumulate(cell.begin(), cell.end(), 0,
@@ -239,11 +298,3 @@ int Hashtable::bitwise_compare(const bvec &a, const bvec &b) const {
     }
     return 0;
 }
-
-
-
-
-
-
-
-

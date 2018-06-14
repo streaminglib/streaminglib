@@ -17,7 +17,7 @@ class Hashtable
 public:
     // cell_width 为每一个 counter 包含的 bit 数，cells 为 counter 数
     Hashtable(size_t cell_width, size_t cells, size_t rows=1);
-    static size_t inner_product(const Hashtable &a, size_t rowa, const Hashtable &b, size_t rowb);
+    static size_t inner_product(Hashtable &a, size_t rowa, Hashtable &b, size_t rowb);
     // 获取特定位置的 counter get([1, 2, 3], out, row=0): out <- [t[0][1], t[0][2], t[0][3]]
     const vector<bvec> &get_row(size_t row) const;
     size_t get(size_t idx, int row=0) const;
@@ -39,6 +39,10 @@ public:
     size_t minimum(const nvec &mask, int row=0) const;
     void max(const nvec &indices, size_t n, int row=0);
     void assign(const nvec &indices, size_t n, int row=0);
+//    void set_global_read_lock();
+//    void set_global_write_lock();
+//    void unset_global_read_lock();
+//    void unset_global_write_lock();
 
 private:
     size_t cell_width;
@@ -47,7 +51,10 @@ private:
     // 基本数据结构，最深的 vector 代表一个 counter
     // 故实际上是 2D counter 表。
     // bvec: vector<bool>
-    std::vector<std::vector<bvec>> table;
+    vector<vector<bvec>> table;
+    vector<vector<omp_lock_t>> lock_table;
+//    omp_lock_t global_read_lock;
+//    omp_lock_t global_write_lock;
 
     // 辅助函数，将 counter 转换为 size_t 的值，int.frombytes
     static size_t cell_to_sizet(const bvec &cell);

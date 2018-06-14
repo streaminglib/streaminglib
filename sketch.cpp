@@ -6,7 +6,6 @@
 #include <string>
 #include <cmath>
 #include <algorithm>
-#include <iostream>
 #include "hashtable.h"
 #include "hash.h"
 #include "sketch.h"
@@ -33,7 +32,7 @@ query_element(const string &elem) const {
 }
 
 size_t CMSketch::
-query_inner_product(const CMSketch &cms) const {
+query_inner_product(CMSketch &cms) {
     size_t result = Hashtable::inner_product(hashtable, 0, cms.hashtable, 0);
     for (size_t i = 1; i < rows; i++){
         size_t inner_prod = Hashtable::inner_product(hashtable, i, cms.hashtable, i);
@@ -46,6 +45,7 @@ query_inner_product(const CMSketch &cms) const {
 void CMSketch::
 insert_element(const vector<string> &elem, nvec delta) {
     size_t n = elem.size();
+#pragma omp parallel for
     for (size_t i = 0; i < n; i++)
         insert_element(elem[i], delta[i]);
 }
@@ -56,15 +56,16 @@ query_element(const vector<string> &elem) const {
     size_t n = elem.size();
     size_t result;
 
+    results.resize(elem.size());
+
+#pragma omp parallel for
     for (size_t i = 0; i < n; i++) {
         result = query_element(elem[i]);
-        results.push_back(result);
+        results[i] = result;
     }
     
     return results;
 }
-
-// TODO: range query
 
 FMSketch::FMSketch(size_t cells, Hash &hash)
         : hashtable(1, cells, 1), hash(hash) {
@@ -96,6 +97,8 @@ query_num_distinct() const {
 void FMSketch::
 insert_element(const vector<string> &elem) {
     size_t n = elem.size();
+
+#pragma omp parallel for
     for (size_t i = 0; i < n; i++)
         insert_element(elem[i]);
 }
@@ -137,6 +140,8 @@ query_element(const string &elem) const {
 void CountSketch::
 insert_element(const vector<string> &elem, nvec delta) {
     size_t n = elem.size();
+
+#pragma omp parallel for
     for (size_t i = 0; i < n; i++)
         insert_element(elem[i], delta[i]);
 }
@@ -147,9 +152,12 @@ query_element(const vector<string> &elem) const {
     size_t n = elem.size();
     size_t result;
     
+    results.resize(elem.size());
+    
+#pragma omp parallel for
     for (size_t i = 0; i < n; i++) {
         result = query_element(elem[i]);
-        results.push_back(result);
+        results[i] = result;
     }
     
     return results;
@@ -161,11 +169,3 @@ find_median(nvec &vec) const {
     std::nth_element(vec.begin(), vec.begin()+mid, vec.end());
     return vec[mid];
 }
-
-
-
-
-
-
-
-

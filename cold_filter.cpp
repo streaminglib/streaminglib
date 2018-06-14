@@ -63,6 +63,36 @@ insert_and_report(const string &elem, size_t num, size_t &repo_freq) {
     return true;
 }
 
+bvec ColdFilter::
+insert_and_report(const vector<string> &elem) {
+    bvec results;
+    size_t len = elem.size();
+    
+    results.resize(len);
+    
+#pragma omp parallel for
+    for (size_t i = 0; i < len; i++)
+        results[i] = insert_and_report(elem[i]);
+    
+    return results;
+}
+bvec ColdFilter::
+insert_and_report(const vector<string> &elem, nvec num, nvec &repo_freq) {
+    bvec results;
+    size_t len = elem.size();
+    
+    results.resize(len);
+    if (!repo_freq.empty()) 
+        repo_freq.clear();
+    repo_freq.resize(len);
+    
+#pragma omp parallel for
+    for (size_t i = 0; i < len; i++)
+        results[i] = insert_and_report(elem[i], num[i], repo_freq[i]);
+    
+    return results;
+}
+
 ColdFilter_Aggregate::
 ColdFilter_Aggregate(ColdFilter &filter, size_t buckets,
                      size_t bucket_cells, Hash &bucket_hash)
@@ -82,6 +112,23 @@ insert_and_report(const string &elem, size_t id, size_t &repo_freq) {
     overflow = this->filter.insert_and_report(elem, bucket_repo_freq, repo_freq);
     if (overflow) return true;
     return false;
+}
+
+bvec ColdFilter_Aggregate::
+insert_and_report(const vector<string> &elem, nvec id, nvec &repo_freq) {
+    bvec results;
+    size_t len = elem.size();
+    
+    results.resize(len);
+    if (!repo_freq.empty())
+        repo_freq.clear();
+    repo_freq.resize(len);
+    
+#pragma omp parallel for
+    for (size_t i = 0; i < len; i++)
+        results[i] = insert_and_report(elem[i], id[i], repo_freq[i]);
+    
+    return results;
 }
 
 void ColdFilter_Aggregate::Bucket::

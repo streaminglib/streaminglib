@@ -14,7 +14,7 @@ public:
     CMSketch(size_t rows, size_t cell_width, size_t cells, Hash &hash);
     void insert_element(const string &elem, size_t delta=1);
     size_t query_element(const string &elem) const;
-    size_t query_inner_product(const CMSketch &cms) const;
+    size_t query_inner_product(CMSketch &cms);
     void insert_element(const vector<string> &elem, nvec delta);
     nvec query_element(const vector<string> &elem) const;
 private:
