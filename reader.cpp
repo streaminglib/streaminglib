@@ -1,31 +1,56 @@
-//
-// Created by jin on 2018/5/10.
-//
-
 #include "reader.h"
 
-
-FileReader::
-FileReader(const string &filename,
-           const Transformer &transformer,
-           size_t batch) {
+Reader::
+Reader(const string &filename, size_t batch_size) {
+    this->filename = filename;
+    this->batch_size = batch_size;
     this->in.open(filename);
-    this->batch_size = batch;
-    this->transformer = transformer;
+    this->finish = false;
 }
 
-FileReader::
-~FileReader() {
-    this->in.close();
-}
-
-void FileReader::
-next_batch(vector<string> &out) const {
-    if (!out.empty()) out.clear();
-    string next_str;
-    for (size_t i = 0; i < batch_size; i++) {
-        in >> next_str;
-        if (next_str.empty()) return;
-        out.push_back(transformer.transform(next_str));
+vector<string> Reader::
+read_batch() {
+    vector<string> results;
+    string s;
+    for (size_t i = 0; i < this->batch_size; i++) {
+        if(!(this->in >> s)) {
+            this->finish = true;
+            break;
+        }
+        results.push_back(s);
     }
+    return results;
+}
+
+vector<size_t> Reader::
+read_freqs() {
+    vector<size_t> results;
+    size_t s;
+    for (size_t i = 0; i < this->batch_size; i++) {
+        if (!(this->in >> s)) {
+            this->finish = true;
+            break;
+        }
+        results.push_back(s);
+    }
+    return results;
+}
+
+bool Reader::
+finished() const {
+    return this->finish;
+}
+
+void Reader::
+read(const string &filename) {
+    if (this->in.is_open())
+        this->in.close();
+    this->in.open(filename);
+    this->finish = false;
+}
+
+Reader::
+~Reader() {
+    if (this->in.is_open())
+        this->in.close();
 }

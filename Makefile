@@ -18,7 +18,7 @@
 #----------------------------------------------------------------
 
 SRCS          =
-CXXSRCS       = bloom_filter.cpp ams_sketch.cpp skim_sketch.cpp sketch.cpp cold_filter.cpp hash.cpp hashtable.cpp MurmurHash3.cpp CityHash.cpp
+CXXSRCS       = bloom_filter.cpp ams_sketch.cpp skim_sketch.cpp sketch.cpp cold_filter.cpp hash.cpp hashtable.cpp MurmurHash3.cpp CityHash.cpp reader.cpp
 OBJS          =
 INTERFACE     = bloom_filter.i
 WRAPFILE      = $(INTERFACE:.i=_wrap.cpp)
@@ -31,7 +31,7 @@ exec_prefix   = ${prefix}
 CC            = gcc
 CXX           = g++
 CFLAGS        =
-CXXFLAGS	  = -std=c++11 -Xpreprocessor -fopenmp
+CXXFLAGS	  = -std=c++11 -Xpreprocessor -fopenmp -O2
 INCLUDES      =
 LIBS          =
 

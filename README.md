@@ -20,7 +20,7 @@ sketch = bf.ams_sketch(4, 256, seeds)
 ```python
 sketch.insert_element(id_list, freqs)
 
-result = sketch.obj_count(id_list)
+result = sketch.obj_cou nt(id_list)
 
 result_f2 = sketch.get_estimateF2()
 ```

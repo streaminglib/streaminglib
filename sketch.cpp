@@ -7,9 +7,12 @@
 #include <cmath>
 #include <algorithm>
 #include <iostream>
+#include <ctime>
 #include "hashtable.h"
 #include "hash.h"
 #include "sketch.h"
+
+#define NUM_THREADS 16
 
 CMSketch::
 CMSketch(size_t rows, size_t cell_width, size_t cells, Hash &hash)
@@ -39,8 +42,17 @@ insert_element(const string &elem, size_t delta) {
         report = cf.insert_and_report(elem, delta, repo_freq);
         if (!report) return;
     }
+//    time_t start = time(0);
     nvec indices = hash(elem);
+//    time_t end = time(0);
+//    double hash_time = difftime(end, start);
+//    std::cout << "hash time: " << hash_time << std::endl;
+//    start = time(0);
     hashtable.inc(indices, delta, -1);
+//    end = time(0);
+//    double insert_time = difftime(end, start);
+//    std::cout << "insert time: " << insert_time << std::endl;
+//    std::cout << std::endl;
 }
 
 size_t CMSketch::
@@ -64,9 +76,13 @@ query_inner_product(CMSketch &cms) {
 void CMSketch::
 insert_element(const vector<string> &elem, nvec delta) {
     size_t n = elem.size();
-#pragma omp parallel for
+//    time_t start = time(0);
+#pragma omp parallel for num_threads(NUM_THREADS)
     for (size_t i = 0; i < n; i++)
         insert_element(elem[i], delta[i]);
+//    time_t end = time(0);
+//    double hash_time = (end-start)/(double)(CLOCKS_PER_SEC/1000);
+//    std::cout << "insert time: " << hash_time << std::endl;
 }
 
 nvec CMSketch::
@@ -76,13 +92,37 @@ query_element(const vector<string> &elem) const {
     size_t result;
 
     results.resize(elem.size());
-
-#pragma omp parallel for
+    
+//    time_t start = time(0);
+#pragma omp parallel for num_threads(NUM_THREADS)
     for (size_t i = 0; i < n; i++) {
         result = query_element(elem[i]);
         results[i] = result;
     }
+//    time_t end = time(0);
+//    double hash_time = (end-start)/(double)(CLOCKS_PER_SEC/1000);
+//    std::cout << "query time: " << hash_time << std::endl;
     
+    return results;
+}
+
+void CMSketch::
+insert_element(const string &id_file, const string &freq_file) {
+    Reader reader(id_file);
+    vector<string> elems = reader.read_batch();
+    reader.read(freq_file);
+    nvec freqs = reader.read_freqs();
+    insert_element(elems, freqs);
+}
+
+nvec CMSketch::
+query_element_from_file(const string &filename) const {
+    Reader reader(filename);
+    nvec results;
+    while (!reader.finished()) {
+        nvec result = query_element(reader.read_batch());
+        results.insert(results.end(), result.begin(), result.end());
+    }
     return results;
 }
 
@@ -117,7 +157,7 @@ void FMSketch::
 insert_element(const vector<string> &elem) {
     size_t n = elem.size();
 
-#pragma omp parallel for
+#pragma omp parallel for num_threads(NUM_THREADS)
     for (size_t i = 0; i < n; i++)
         insert_element(elem[i]);
 }
@@ -160,7 +200,7 @@ void CountSketch::
 insert_element(const vector<string> &elem, nvec delta) {
     size_t n = elem.size();
 
-#pragma omp parallel for
+#pragma omp parallel for num_threads(NUM_THREADS)
     for (size_t i = 0; i < n; i++)
         insert_element(elem[i], delta[i]);
 }
@@ -173,7 +213,7 @@ query_element(const vector<string> &elem) const {
     
     results.resize(elem.size());
     
-#pragma omp parallel for
+#pragma omp parallel for num_threads(NUM_THREADS)
     for (size_t i = 0; i < n; i++) {
         result = query_element(elem[i]);
         results[i] = result;

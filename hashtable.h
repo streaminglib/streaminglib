@@ -52,7 +52,9 @@ private:
     // 故实际上是 2D counter 表。
     // bvec: vector<bool>
     vector<vector<bvec>> table;
+    
     vector<vector<omp_lock_t>> lock_table;
+    
 //    omp_lock_t global_read_lock;
 //    omp_lock_t global_write_lock;
 

@@ -8,6 +8,7 @@
 #include "hash.h"
 #include "hashtable.h"
 #include "cold_filter.h"
+#include "reader.h"
 
 class CMSketch
 {
@@ -19,6 +20,8 @@ public:
     size_t query_inner_product(CMSketch &cms);
     void insert_element(const vector<string> &elem, nvec delta);
     nvec query_element(const vector<string> &elem) const;
+    void insert_element(const string &id_file, const string &freq_file);
+    nvec query_element_from_file(const string &filename) const;
 private:
     Hashtable hashtable;
     Hash &hash;

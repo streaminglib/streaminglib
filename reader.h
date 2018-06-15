@@ -1,41 +1,27 @@
-//
-// Created by jin on 2018/5/10.
-//
-
 #ifndef STREAMINGLIB_READER_H
 #define STREAMINGLIB_READER_H
 
+#include <iostream>
 #include <string>
-#include <fstream>
 #include <vector>
+#include <fstream>
+using std::vector;
 using std::string;
 using std::ifstream;
-using std::vector;
 
-class Transformer
-{
+class Reader {
 public:
-    virtual string transform(const string &s) const = 0;
-};
-
-class Reader
-{
-public:
-    virtual void next_batch(vector<string> &out) const = 0;
-};
-
-class FileReader: public Reader
-{
-public:
-    FileReader(const string &filename,
-               const Transformer &transformer,
-               size_t batch);
-    void next_batch(vector<string> &out) const override;
-    ~FileReader();
+    Reader(const string &filename, size_t batch_size=2048);
+    vector<string> read_batch();
+    vector<size_t> read_freqs();
+    bool finished() const;
+    void read(const string &filename);
+    ~Reader();
 private:
-    ifstream in;
+    string filename;
     size_t batch_size;
-    Transformer transformer;
+    ifstream in;
+    bool finish;
 };
 
-#endif //STREAMINGLIB_READER_H
+#endif // STREAMINGLIB_READER_H
