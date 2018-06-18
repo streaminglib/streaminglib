@@ -1,4 +1,4 @@
-#include "spacesaving.h"
+#include "skim_sketch.h"
 
 //=========================================================================
 //= Multiplicative LCG for generating uniform(0.0, 1.0) random numbers    =
@@ -86,33 +86,40 @@ int zipf(double alpha, int n)
   return(zipf_value);
 }
 
-#include <iostream>
-#include <vector>
-#include <algorithm>
+vector<int> cnt1(1000000);
+vector<int> cnt2(1000000);
 
-using namespace std;
+int main() {
+	std::ios::sync_with_stdio(false);
+	rand_val(7);
+	int flow_size = 600;
+	vector<int> f1(flow_size);
+	vector<int> f2(flow_size);
+	int domain_size = 1000;
+	for(int i = 0; i < flow_size; i += 1){
+        // even on 0.5 data, it achieves about 5% errorrate
+		int t = zipf(0.5, domain_size);
+		int tt = zipf(0.5, domain_size);
+		if(i % 600 == 0){
+			rand_val(7);
+		}
+		f1[i] = t;
+		cnt1[t] += 1;
+		f2[i] = tt;
+		cnt2[tt] += 1;
+	}
 
-int main(){
-    rand_val(7);
-    space_saving ss(500);
-    vector<int> data(10240);
-    for(int i = 0; i < 10240; i += 1){
-        if(i % 500 == 0){
-            rand_val(7);
-        }
-    	data[i] = zipf(1.5, 10000);
+	cout << "end" << endl;
 
+	skim_sketch ss(f1, f2, domain_size);
+
+	cout << ss.join_size << endl;
+
+	int exact_ans = 0;
+	for(int i = 0; i < flow_size; i += 1){
+		exact_ans += cnt1[i] * cnt2[i];
 	}
-	random_shuffle(data.begin(), data.end());
-	for(int i = 0; i < 10240; i += 1){
-		ss.insert(data[i], 10240 / data[i]);
-	}
-    vector<node> res(500);
-    ss.query_top(res);
-    // works better on skewed data
-    // about 90%
-    for(int i = 0; i < 500; i += 1){
-    	cout << res[i].value << endl;
-	}
-    return 0;
+	cout << exact_ans << endl;
+
+	return 0;
 }

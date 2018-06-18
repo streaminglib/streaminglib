@@ -90,8 +90,8 @@ int skim_sketch::est_sub_join_size(std::vector<int> & e, Hashtable & h){
 
 int hash_template(int seed, int n) {
 	uint64_t *res = (uint64_t* )malloc(sizeof(uint64_t) * 2);
-	MurmurHash3_x64_128(&n, 1, seed, res);
-
+    // i was wrong here...sizeof(res) = 4 * sizeof(int)
+	MurmurHash3_x64_128(&n, 4, seed, res);
 	int ans = (*res) & (s2 - 1);
 	free(res);
 	return ans;
